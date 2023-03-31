@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>User List</title>
+    <style>
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            background-color: #f1f1f1;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+        }
+
+        li {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        li:hover {
+            background-color: #ddd;
+        }
+
+        .chat-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgb(201, 121, 17);
+            color: rgb(0, 0, 0);
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome <%= user.name  %>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+    </h1>
+
+    <ul>
+        <% users.forEach( user => { %>
+            <li>
+                <span>
+                    <%= user.name %>
+                    <% unseen.forEach((value, key)=> { %>
+                        <% if (key == user._id ) { %>
+                            <%= value%>
+                        <% } %>
+                    <% }) %>
+                </span>
+                <button class="chat-btn" onclick="chatBegin('<%= user._id%>')">Chat</button>
+            </li>
+
+        <% }) %>
+    </ul>
+</body>
+<script>
+    function chatBegin(id) {
+        fetch("http://localhost:5000/users", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id }),
+        })
+            .then(res => res.json())
+            .then(body => {
+                console.log("success:", body)
+                location.href = `http://localhost:5000/chat/${body.roomId}`;
+            })
+            .catch(err => console.log(err))
+    }
+
+    function logout() {
+        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        location.reload()
+    }
+
+    
+</script>
+
+</html>

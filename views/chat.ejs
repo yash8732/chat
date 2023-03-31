@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Lite</title>
+    <!-- <script defer src="/client.js"></script> -->
+    <style>
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 955px;
+            background-color: aqua;
+            margin: auto;
+            height: 500px;
+            padding: 33px;
+            overflow: auto;
+            scroll-behavior: smooth;
+            margin-bottom: 24px;
+        }
+
+        .message {
+            background-color: gray;
+            width: 24%;
+            padding: 10px;
+            margin: 17px 12px;
+            border-radius: 10px;
+            border: 2px solid black;
+        }
+
+        .left {
+            float: left;
+            clear: both;
+        }
+
+        .right {
+            float: right;
+            clear: both;
+        }
+
+        .btn {
+            height: 34px;
+            border: 2px solid black;
+            border-radius: 2px;
+        }
+
+        #send-container {
+            text-align: center;
+
+        }
+
+        #messageInp {
+            width: 92%;
+            border: 2px solid black;
+            border-radius: 5px;
+            height: 34px;
+
+        }
+
+        body {
+            height: 100vh;
+            background-image: linear-gradient(rgb(255, 255, 255), rgb(3, 177, 251));
+        }
+
+        .logout-btn {
+			
+			top: 10px;
+			right: 10px;
+			background-color: rgb(201, 121, 17);
+			color: rgb(0, 0, 0);
+			padding: 10px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+        }
+        
+        .goBack-btn {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			background-color: rgb(201, 121, 17);
+			color: rgb(0, 0, 0);
+			padding: 10px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+        }
+    </style>
+
+</head>
+
+<body>
+    <h1>welcome <%= user.name%>
+            <button class="goBack-btn" onclick="goBack()">Go Back</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+    </h1>
+    <div class="container">
+        <div class="message right">this is what you send </div>
+        <div class="message left">this is what you recieve</div>
+    </div>
+    <div class="send">
+        <form id="send-container">
+            <input type="text" name="messageInp" id="messageInp">
+            <button class="btn" type="submit">Send</button>
+        </form>
+    </div>
+    <script src="http://localhost:5000/socket.io/socket.io.js"> </script>
+    <script src="/socket.js"> </script>
+    <script>
+
+        const userName = "<%= user.name %>";
+        const roomId = "<%= roomId %>"
+
+        const form = document.getElementById("send-container")
+        const messageInput = document.getElementById("messageInp")
+        const messageContainer = document.querySelector(".container")
+
+        form.addEventListener("submit", e => {
+            e.preventDefault()
+            const message = messageInput.value;
+            console.log(message);
+            append(`you: ${message}`, "right")
+            socket.emit("send", ({ message, roomId, userName }));
+            messageInput.value = "";
+        });
+
+        const append = (message, position) => {
+            const messageElement = document.createElement("div");
+            messageElement.innerHTML = message;
+            messageElement.classList.add("message");
+            messageElement.classList.add(position);
+            messageContainer.append(messageElement);
+        }
+        socket.emit("join_room", roomId)
+        socket.emit('new_user_joined', ({ roomId, userName }));
+
+        socket.on("user_joined", name => {
+            append(`${name} joined the chat`, "right")
+        })
+
+        socket.on("show_messages", msg => {
+            if (msg.userName == "<%= user.name %>") {
+                return append(`you: ${msg.message}`, "right")
+            }
+            append(`${msg.userName} : ${msg.message}`, "left")
+        })
+
+        socket.on("recieve", data => {
+            console.log("recieved");
+            append(`${data.name} : ${data.message}`, "left")
+            socket.emit("seen", {roomId: data.roomId, msg: data.msg})
+            // console.log("BAAD MAI");
+        })
+
+        socket.emit('user_left', ({ roomId, userName }));
+
+        // socket.on("left", (userName) => {
+        //     console.log(`${userName} : left the chat`);
+        //     // append(`${userName} : left the chat`, "left")
+        // })
+
+        function logout() {
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            location.reload()
+        }
+
+        function goBack() {
+            location.href = `http://localhost:5000/users`
+        }
+    </script>
+</body>
+
+</html>
